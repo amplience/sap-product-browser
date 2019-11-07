@@ -12,7 +12,6 @@
 table#resultTable th, table#resultTable td {
     border: 1px solid black;
     border-collapse: collapse;
-
 }
 
 #resultTable {
@@ -25,8 +24,8 @@ table#resultTable th, table#resultTable td {
 }
 
 IMG {
-    max-width: 250px;
-    max-height: 200px;
+    max-width: 249px;
+    height: 150px;
 }
 
 * {
@@ -84,7 +83,6 @@ body {
 .productTitle {
     width: 249px;
     height: 29px;
-
 }
 
 .imageContainer {

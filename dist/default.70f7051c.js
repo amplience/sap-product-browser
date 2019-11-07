@@ -84197,7 +84197,7 @@ function () {
   };
 
   ProductService.prototype.getImageSrc = function (image) {
-    return image ? this.host + "/" + image.url : 'N/A';
+    return image ? this.host + "/" + image.url : 'https://apps.dev-artifacts.adis.ws/cms-icons/master/latest/256/ca-types-carousel.png';
   };
 
   return ProductService;
