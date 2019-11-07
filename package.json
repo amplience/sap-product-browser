@@ -10,7 +10,7 @@
     "commonjs": "0.0.1",
     "@types/request": "2.48.3",
     "request": "2.88.0",
-    "dc-extensions-sdk": "git+ssh://git@bitbucket.org/amplience/dc-extensions-sdk.git#193beb2d80b7b41849b1629493e0b1d45f99bd13",
+    "dc-extensions-sdk": "git+ssh://git@bitbucket.org/amplience/dc-extensions-sdk.git#develop",
     "ts-node": "^8.4.1"
   },
   "devDependencies": {

@@ -36,7 +36,14 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var dc_extensions_sdk_1 = require("dc-extensions-sdk");
-var product_search_service_js_1 = require("./src/service/product-search-service.js");
+var product_service_js_1 = require("./src/service/product-service.js");
+function createElement(type, clazz) {
+    var element = document.createElement('div');
+    if (clazz) {
+        element.className = clazz;
+    }
+    return element;
+}
 function onInit() {
     return __awaiter(this, void 0, void 0, function () {
         var SDK, value, schema, service, searchButton;
@@ -46,7 +53,6 @@ function onInit() {
                 case 0: return [4 /*yield*/, dc_extensions_sdk_1.init()];
                 case 1:
                     SDK = _a.sent();
-                    SDK.frame.setHeight(900);
                     SDK.frame.startAutoResizer();
                     return [4 /*yield*/, SDK.field.getValue()];
                 case 2:
@@ -54,30 +60,31 @@ function onInit() {
                     schema = SDK.field.schema;
                     console.log(JSON.stringify(SDK.params));
                     console.log(JSON.stringify(schema['ui:extension']));
-                    service = new product_search_service_js_1.ProductSearchService('', '');
+                    console.log("should be origin of " + location.origin);
+                    service = new product_service_js_1.ProductService('https://api.cjp2keew1-amplience1-d1-public.model-t.cc.commerce.ondemand.com', '/rest/v2', 'electronics-spa', 'USD');
                     searchButton = document.getElementById('searchButton');
                     if (searchButton) {
                         searchButton.addEventListener('click', function () { return __awaiter(_this, void 0, void 0, function () {
                             return __generator(this, function (_a) {
-                                service.search(document.getElementById('searchText').value, function (response) {
+                                service.search(document.getElementById('searchText').value, 0, function (response) {
                                     var resultTable = document.getElementById('resultTable');
                                     resultTable.innerHTML = '';
-                                    response.forEach(function (x) {
-                                        var column = document.createElement('div');
-                                        column.className = 'column';
-                                        var card = document.createElement('div');
-                                        card.className = 'card';
+                                    response.products.forEach(function (x) {
+                                        console.log('here is the product' + JSON.stringify(x, null, -2));
+                                        var column = createElement('div', 'column');
+                                        var card = createElement('div', 'card');
                                         column.append(card);
                                         var image = document.createElement('img');
-                                        image.src = x.ProductImageURL;
-                                        card.appendChild(inRow(asHeader(3, document.createTextNode(x.Brand))));
-                                        card.append(inRow(image));
-                                        card.appendChild(inRow(asParagraph(document.createTextNode(x.ProductUUID))));
+                                        var imageSrc = service.getImageSrc(getFirstImageOfFormat('thumbnail', x.images));
+                                        console.log(' my image url: ' + imageSrc);
+                                        image.src = imageSrc;
+                                        card.append(inDiv(asHeader(3, document.createTextNode(x.name)), 'productTitle'));
+                                        card.append(inDiv(image, 'imageContainer'));
+                                        card.append(inDiv(asParagraph(document.createTextNode(x.summary)), 'productSummary'));
                                         resultTable.append(column);
                                     });
                                 });
                                 document.getElementById('searchText');
-                                console.log('cthis value ', document.getElementById('searchText').value);
                                 return [2 /*return*/];
                             });
                         }); });
@@ -87,8 +94,8 @@ function onInit() {
         });
     });
 }
-function inRow(content) {
-    var row = document.createElement('tr');
+function inDiv(content, clazz) {
+    var row = createElement('div', clazz);
     row.append(content);
     return row;
 }
@@ -101,5 +108,8 @@ function asHeader(guage, content) {
     var paragraph = document.createElement("h" + guage);
     paragraph.appendChild(content);
     return paragraph;
+}
+function getFirstImageOfFormat(format, images) {
+    return (images) ? images.find(function (x) { return x.format === format; }) : undefined;
 }
 onInit();

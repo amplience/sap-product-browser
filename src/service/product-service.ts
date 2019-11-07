@@ -1,17 +1,24 @@
 import request, { Response } from 'request';
-import { ProductResult } from '../model/product-result.js';
+import { ProductResult } from '../model/product-result';
+import { ImageContext } from '../model/image-context.js';
 
-export class ProductSearchService {
+const PAGE_SIZE = 25;
+
+export class ProductService {
+
+
   constructor(
       private readonly host: string,
+      private readonly basPath: string,
       private readonly catalogue: string,
-      private readonly token: string
+      private readonly currency: string
   ) {
 
   }
 
-  public search(query: string, onSuccess: (response: ProductResult) => void, onFail?: (error: any) => void) {
-    request.get(`${ this.host }/${ this.catalogue }/products/search?fields=products(code,name,summary,price(FULL),images(DEFAULT),stock(FULL),averageRating),pagination(DEFAULT),sorts(DEFAULT),freeTextSearch&query=${ query }&pageSize=5&lang=en&curr=USD`, {
+  public search(query: string, page: number, onSuccess: (response: ProductResult) => void, onFail?: (error: any) => void) {
+    request.get(`${ this.host }${ this.basPath }/${ this.catalogue }/products/search?fields=products(code,name,summary,price(FULL),images(DEFAULT),stock(FULL),averageRating),pagination(DEFAULT),sorts(DEFAULT),
+    freeTextSearch&query=${ query }&pageSize=${ PAGE_SIZE }&lang=en&curr=${ this.currency }`, {
           headers: {
             'Origin': null
           }
@@ -22,47 +29,33 @@ export class ProductSearchService {
               onFail(error);
               throw new Error('unable to retrieve results from SAP.')
             }
+          }
+          onSuccess(JSON.parse(body))
+
+        }
+    );
+  }
+
+  public getByCode(code: string, onSuccess: (response: ProductResult) => void, onFail?: (error: any) => void) {
+    request.get(`${ this.host }${ this.basPath }/${ this.catalogue }/products/${ code }?fields=code,name,summary,price(FULL),images(DEFAULT),stock(FULL),averageRating&lang=en&curr=${ this.currency }`, {
+          headers: {
+            'Origin': null
+          }
+        },
+        (error: any, response: Response, body: any) => {
+          if (error) {
+            if (onFail) {
+              onFail(error);
+              throw new Error('unable to retrieve product by code from SAP.')
+            }
             onSuccess(body.d.results)
           }
         }
     );
-    //
-    // onSuccess([
-    //   {
-    //     'ProductUUID': '01234567-89ab-cdef-0123-456789abcdef',
-    //     'ProductOrigin': 'string',
-    //     'ProductID': 'string',
-    //     'ProductImageURL': 'http://www.fve.org/cms/wp-content/uploads/kitten-680-680x906.png',
-    //     'WebsiteURL': 'string',
-    //     'Brand': 'string',
-    //     'IsBaseProduct': false,
-    //     'BaseProductID': 'string',
-    //     'BaseProductOrigin': 'string',
-    //     'ProductValidEndDate': '/Date(1492098664000)/',
-    //     'ProductNames': {
-    //       'results': [
-    //         {
-    //           'ProductDescription': 'string',
-    //           'ProductUUID': '01234567-89ab-cdef-0123-456789abcdef',
-    //           'Language': 'string',
-    //           'Name': 'string'
-    //         }
-    //       ]
-    //     },
-    //     'ProductCategoryAssignments': {
-    //       'results': [
-    //         {
-    //           'ProductOrigin': 'string',
-    //           'ProductID': 'string',
-    //           'ProductCategoryHierarchyID': 'string',
-    //           'ProductCategoryID': 'string'
-    //         }
-    //       ]
-    //     },
-    //     'ProductOriginDataSet': {
-    //       'results': []
-    //     }
-    //   }
-    // ])
   }
+
+  public getImageSrc(image?: ImageContext): string {
+    return (image) ? `${ this.host }/${ image.url }` : 'N/A';
+  }
+
 }

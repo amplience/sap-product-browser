@@ -1,6 +1,22 @@
+
+#searchText {
+    border: transparent;
+    padding: 0 34px 0 15px;
+    border-bottom: 1px solid #ccc;
+    height: 32px;
+    line-height: 32px;
+    font-size: 20px;
+    color: #333;
+}
+
 table#resultTable th, table#resultTable td {
     border: 1px solid black;
     border-collapse: collapse;
+
+}
+
+#resultTable {
+    background-color: #f5f5f5;
 }
 
 table#resultTable th, table#resultTable td {
@@ -8,9 +24,8 @@ table#resultTable th, table#resultTable td {
     text-align: left;
 }
 
-
 IMG {
-    max-width: 200px;
+    max-width: 250px;
     max-height: 200px;
 }
 
@@ -29,7 +44,9 @@ body {
     padding: 10px 10px;
 }
 
-.row {margin: 0 0px;}
+.row {
+    margin: 0 0px;
+}
 
 .row:after {
     content: "";
@@ -47,23 +64,55 @@ body {
 
 .card:hover {
     border: solid 1px black;
-    padding: 9px;
+    /*padding: 9px;*/
+}
+
+.card:active {
+    border: solid 1px #11ccff;
+    /*padding: 8px;*/
 }
 
 .card {
+    display: grid;
+    border: solid 1px white;
     box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2);
-    padding: 10px;
+    background-color: #ffffff;
+    width: 251px;
+    height: 251px;
+}
+
+.productTitle {
+    width: 249px;
+    height: 29px;
+
+}
+
+.imageContainer {
+    width: 249px;
+    height: 150px;
     text-align: center;
-    background-color: #f5f5f5;
+}
+
+.productSummary {
+    width: 249px;
+    height: 60px;
+    text-align: left;
+    padding: 0 10px 0 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .card p {
-    text-align: left;
+    font-size: 13px;
+    color: #c0c0c0;
 }
 
 .card h3 {
-    padding: 2px;
-    text-align: left;
+    color: #888888;
+    margin: 5px 10px 0 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 
