@@ -9,16 +9,21 @@ export class ProductService {
 
   constructor(
       private readonly host: string,
-      private readonly basPath: string,
-      private readonly catalogue: string,
-      private readonly currency: string
+      private readonly basPath: string
   ) {
 
   }
 
-  public search(query: string, page: number, onSuccess: (response: ProductResult) => void, onFail?: (error: any) => void) {
-    request.get(`${ this.host }${ this.basPath }/${ this.catalogue }/products/search?fields=products(code,name,summary,price(FULL),images(DEFAULT),stock(FULL),averageRating),pagination(DEFAULT),sorts(DEFAULT),
-    freeTextSearch&query=${ query }&pageSize=${ PAGE_SIZE }&lang=en&curr=${ this.currency }`, {
+  public search(
+      catalogue: string,
+      query: string,
+      currency: string,
+      page: number,
+      onSuccess: (response: ProductResult) => void,
+      onFail?: (error: any) => void
+  ) {
+    request.get(`${ this.host }${ this.basPath }/${ catalogue }/products/search?fields=products(code,name,summary,price(FULL),images(DEFAULT),stock(FULL),averageRating),pagination(DEFAULT),sorts(DEFAULT),
+    freeTextSearch&query=${ query }&pageSize=${ PAGE_SIZE }&lang=en&curr=${currency }`, {
           headers: {
             'Origin': null
           }
@@ -36,8 +41,13 @@ export class ProductService {
     );
   }
 
-  public getByCode(code: string, onSuccess: (response: ProductResult) => void, onFail?: (error: any) => void) {
-    request.get(`${ this.host }${ this.basPath }/${ this.catalogue }/products/${ code }?fields=code,name,summary,price(FULL),images(DEFAULT),stock(FULL),averageRating&lang=en&curr=${ this.currency }`, {
+  public getByCode(
+      catalogue: string,
+      code: string,
+      onSuccess: (response: ProductResult) => void,
+      onFail?: (error: any) => void
+  ) {
+    request.get(`${ this.host }${ this.basPath }/${ catalogue }/products/${ code }?fields=code,name,summary,price(FULL),images(DEFAULT),stock(FULL),averageRating&lang=en&curr=${ this.currency }`, {
           headers: {
             'Origin': null
           }

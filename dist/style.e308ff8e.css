@@ -1,12 +1,31 @@
 
-#searchText {
+.searchBox {
     border: transparent;
     padding: 0 34px 0 15px;
     border-bottom: 1px solid #ccc;
     height: 32px;
+    width: 200px;
     line-height: 32px;
     font-size: 20px;
-    color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#resultsInfoContainer {
+    width: 170px;
+}
+
+#resultsInfoContainer P{
+    font-size: 15px;
+    color: #888888;
+}
+
+#separator p {
+    padding: 0;
+    margin: 0;
+    font-size: 35px;
+    color: #c0c0c0;
 }
 
 table#resultTable th, table#resultTable td {
@@ -15,7 +34,7 @@ table#resultTable th, table#resultTable td {
 }
 
 #resultTable {
-    background-color: #f5f5f5;
+    background-color: #e8e8e8;
 }
 
 table#resultTable th, table#resultTable td {

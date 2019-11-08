@@ -198,7 +198,7 @@ var MediaLink =
 function () {
   /**
    * Media Link - Use to open the media browser.
-   * @param connection message.io connection
+   * @param connection message-event-channel connection
    */
   function MediaLink(connection) {
     this.connection = connection;
@@ -503,7 +503,7 @@ var ContentLink =
 function () {
   /**
    * Content Link - Use to open the content browser.
-   * @param connection message.io connection
+   * @param connection message-event-channel connection
    */
   function ContentLink(connection) {
     this.connection = connection;
@@ -548,7 +548,7 @@ var ContentItem =
 function () {
   /**
    * Content Item - Used for retrieving Content Items.
-   * @param connection message.io connection
+   * @param connection message-event-channel connection
    */
   function ContentItem(connection) {
     this.connection = connection;
@@ -603,7 +603,7 @@ var Frame =
 function () {
   /**
    * Use in order to control the re-sizing of the Extension
-   * @param connection message.io connection
+   * @param connection message-event-channel connection
    * @param win override the default window object
    */
   function Frame(connection, win) {
@@ -776,7 +776,7 @@ var Field =
 function () {
   /**
    * Allows you to perform actions on the field that is being edited.
-   * @param connection message.io connection
+   * @param connection message-event-channel connection
    * @param schema JSON Schema of the field
    */
   function Field(connection, schema) {
@@ -1490,14 +1490,14 @@ var MESSAGE_TYPE;
  */
 
 
-var MIO_EVENTS;
+var MC_EVENTS;
 
-(function (MIO_EVENTS) {
-  MIO_EVENTS["HANDSHAKE"] = "mio-handshake";
-  MIO_EVENTS["CONNECTED"] = "mio-connected";
-  MIO_EVENTS["DISCONNECTED"] = "mio-disconnected";
-  MIO_EVENTS["CONNECTION_TIMEOUT"] = "mio-connection-timeout";
-})(MIO_EVENTS || (MIO_EVENTS = {}));
+(function (MC_EVENTS) {
+  MC_EVENTS["HANDSHAKE"] = "mc-handshake";
+  MC_EVENTS["CONNECTED"] = "mc-connected";
+  MC_EVENTS["DISCONNECTED"] = "mc-disconnected";
+  MC_EVENTS["CONNECTION_TIMEOUT"] = "mc-connection-timeout";
+})(MC_EVENTS || (MC_EVENTS = {}));
 /**
  * Connection Base Class.
  *
@@ -1514,7 +1514,7 @@ function () {
    * @param options Connection configuration options
    * @param options.timeout Default request timeout (ms). This will trigger a reject on a any request that takes longer than this value. 200ms by default.
    * @param options.connectionTimeout Connection timeout (ms). This will trigger the CONNECTION_TIMEOUT if a connection hasn't been established by this time.
-   * @param options.debug Enabling uses console.log to output what MIO is doing behind the scenes. Used for debugging. Disabled by default.
+   * @param options.debug Enabling uses console.log to output what MC is doing behind the scenes. Used for debugging. Disabled by default.
    * @param options.onload Uses the onload event of an iframe to trigger the process for creating a connection. If set to false the connection process needs to be triggered manually. Note a connection will only work if the child frame has loaded. Enabled by default.
    * @param options.targetOrigin Limits the iframe to send messages to only the specified origins. '*' by Default.
    * @param options.clientInitiates Awaits an postMessage (init) trigger from the child before it sets up and sends the MessageChannel port to the child. false by Default.
@@ -1569,7 +1569,12 @@ function () {
 
 
   Connection.prototype.on = function (event, callback) {
-    this.emitters[event] = callback;
+    if (this.emitters[event] && Array.isArray(this.emitters[event])) {
+      this.emitters[event].push(callback);
+    } else {
+      this.emitters[event] = [callback];
+    }
+
     return this;
   };
   /**
@@ -1656,7 +1661,7 @@ function () {
 
         _this.handleMessage({
           type: MESSAGE_TYPE.EMIT,
-          event: MIO_EVENTS.CONNECTION_TIMEOUT,
+          event: MC_EVENTS.CONNECTION_TIMEOUT,
           payload: {
             message: 'Connection timed out while ' + _this.connectionStep
           }
@@ -1691,7 +1696,7 @@ function () {
   Connection.prototype.finishInit = function () {
     this.connected = true;
     this.clearConnectionTimeout();
-    this.emit(MIO_EVENTS.CONNECTED);
+    this.emit(MC_EVENTS.CONNECTED);
     this.completeBacklog();
   };
 
@@ -1719,31 +1724,35 @@ function () {
 
     switch (message.type) {
       case MESSAGE_TYPE.EMIT:
-        if (!this.emitters[message.event]) {
+        if (!this.emitters[message.event] || !Array.isArray(this.emitters[message.event])) {
           return;
         }
 
-        this.emitters[message.event](message.payload);
+        this.emitters[message.event].forEach(function (cb) {
+          return cb(message.payload);
+        });
         break;
 
       case MESSAGE_TYPE.REQUEST:
-        if (!this.emitters[message.event]) {
+        if (!this.emitters[message.event] || !Array.isArray(this.emitters[message.event])) {
           return;
         }
 
-        this.emitters[message.event](message.payload, function (payload) {
-          _this.message({
-            id: message.id,
-            type: MESSAGE_TYPE.RESOLVE,
-            event: message.event,
-            payload: payload
-          });
-        }, function (payload) {
-          _this.message({
-            id: message.id,
-            type: MESSAGE_TYPE.REJECT,
-            event: message.event,
-            payload: payload
+        this.emitters[message.event].forEach(function (cb) {
+          return cb(message.payload, function (payload) {
+            _this.message({
+              id: message.id,
+              type: MESSAGE_TYPE.RESOLVE,
+              event: message.event,
+              payload: payload
+            });
+          }, function (payload) {
+            _this.message({
+              id: message.id,
+              type: MESSAGE_TYPE.REJECT,
+              event: message.event,
+              payload: payload
+            });
           });
         });
         break;
@@ -1789,7 +1798,7 @@ function () {
   Connection.prototype.message = function (message) {
     var force = false;
 
-    if (message.event === MIO_EVENTS.HANDSHAKE || message.event === MIO_EVENTS.CONNECTED || message.event === MIO_EVENTS.DISCONNECTED) {
+    if (message.event === MC_EVENTS.HANDSHAKE || message.event === MC_EVENTS.CONNECTED || message.event === MC_EVENTS.DISCONNECTED) {
       force = true;
     }
 
@@ -1833,7 +1842,7 @@ function (_super) {
    * @param options Connection configuration options.
    * @param options.timeout Default request timeout (ms). This will trigger a reject on a any request that takes longer than this value. 200ms by default.
    * @param options.connectionTimeout Connection timeout (ms). This will trigger the CONNECTION_TIMEOUT if a connection hasn't been established by this time.
-   * @param options.debug Enabling uses console.log to output what MIO is doing behind the scenes. Used for debugging. Disabled by default.
+   * @param options.debug Enabling uses console.log to output what MC is doing behind the scenes. Used for debugging. Disabled by default.
    * @param options.onload Uses the onload event of an iframe to trigger the process for creating a connection. If set to false the connection process needs to be triggered manually. Note a connection will only work if the child frame has loaded. Enabled by default.
    * @param options.targetOrigin Limits the iframe to send messages to only the specified origins. '*' by Default.
    * @param options.clientInitiates Awaits an postMessage (init) trigger from the child before it sets up and sends the MessageChannel port to the child. false by Default.
@@ -1850,7 +1859,7 @@ function (_super) {
     _this.frame = frame;
     _this.connectionStep = CONNECTION_STEPS.CONNECTION;
 
-    _this.frame.classList.add('mio-iframe');
+    _this.frame.classList.add('mc-iframe');
 
     if (_this.options.onload) {
       _this.setupLoadInit();
@@ -1862,7 +1871,7 @@ function (_super) {
 
     _this.setConnectionTimeout();
 
-    _this.on(MIO_EVENTS.DISCONNECTED, function () {
+    _this.on(MC_EVENTS.DISCONNECTED, function () {
       return _this.connected = false;
     });
 
@@ -1900,10 +1909,10 @@ function (_super) {
     var _this = this;
 
     this.connectionStep = CONNECTION_STEPS.INITIATION_FROM_CLIENT;
-    var numFrames = this.options.window.document.querySelectorAll('iframe.mio-iframe').length;
-    this.name = 'mio-' + numFrames;
+    var numFrames = this.options.window.document.querySelectorAll('iframe.mc-iframe').length;
+    this.name = 'mc-' + numFrames;
     var url = new URL(this.frame.src);
-    url.searchParams.append('mio-name', this.name);
+    url.searchParams.append('mc-name', this.name);
     this.frame.src = url.toString();
 
     this.clientInitListener = function (e) {
@@ -1925,21 +1934,17 @@ function (_super) {
     this.setupChannel();
     this.initPortEvents();
     this.listenForHandshake();
-    this.sendPortToClient();
+    this.sendPortToClient(this.frame.contentWindow);
   };
 
-  ServerConnection.prototype.sendPortToClient = function () {
-    if (!this.frame.contentWindow || !this.frame.src) {
-      return false;
-    }
-
-    this.frame.contentWindow.postMessage(null, this.options.targetOrigin ? this.options.targetOrigin : '*', [this.channel.port2]);
+  ServerConnection.prototype.sendPortToClient = function (client) {
+    client.postMessage(null, this.options.targetOrigin ? this.options.targetOrigin : '*', [this.channel.port2]);
   };
 
   ServerConnection.prototype.listenForHandshake = function () {
     var _this = this;
 
-    this.on(MIO_EVENTS.HANDSHAKE, function (payload, resolve) {
+    this.on(MC_EVENTS.HANDSHAKE, function (payload, resolve) {
       _this.finishInit();
 
       resolve(payload);
@@ -1994,7 +1999,7 @@ function (_super) {
 
   ClientConnection.prototype.init = function () {
     var url = new URL(this.options.window.location.toString());
-    var id = url.searchParams.get('mio-name');
+    var id = url.searchParams.get('mc-name');
 
     if (this.options.debug) {
       console.log('Client: sent postMessage value:', id);
@@ -2020,7 +2025,7 @@ function (_super) {
       this.setConnectionTimeout();
     }
 
-    this.request(MIO_EVENTS.HANDSHAKE).then(function () {
+    this.request(MC_EVENTS.HANDSHAKE).then(function () {
       _this.addBeforeUnloadEvent();
 
       _this.finishInit();
@@ -2033,7 +2038,7 @@ function (_super) {
     var _this = this;
 
     this.options.window.addEventListener('beforeunload', function (event) {
-      _this.emit(MIO_EVENTS.DISCONNECTED);
+      _this.emit(MC_EVENTS.DISCONNECTED);
     });
   };
 
@@ -2049,7 +2054,7 @@ var ContentReference =
 function () {
   /**
    * Content Link - Use to open the content browser.
-   * @param connection message.io connection
+   * @param connection message-event-channel connection
    */
   function ContentReference(connection) {
     this.connection = connection;
@@ -2231,7 +2236,7 @@ function () {
 
             return __generator(this, function (_a) {
               this.connection.init();
-              this.connection.on(MIO_EVENTS.CONNECTED, function () {
+              this.connection.on(MC_EVENTS.CONNECTED, function () {
                 return __awaiter(_this, void 0, void 0, function () {
                   var e_1;
                   return __generator(this, function (_a) {
@@ -2266,7 +2271,7 @@ function () {
                   });
                 });
               });
-              this.connection.on(MIO_EVENTS.CONNECTION_TIMEOUT, function () {
+              this.connection.on(MC_EVENTS.CONNECTION_TIMEOUT, function () {
                 reject(new Error(ERRORS_INIT.CONNTECTION_TIMEOUT));
               });
               return [2
@@ -84155,15 +84160,13 @@ var PAGE_SIZE = 25;
 var ProductService =
 /** @class */
 function () {
-  function ProductService(host, basPath, catalogue, currency) {
+  function ProductService(host, basPath) {
     this.host = host;
     this.basPath = basPath;
-    this.catalogue = catalogue;
-    this.currency = currency;
   }
 
-  ProductService.prototype.search = function (query, page, onSuccess, onFail) {
-    request_1.default.get("" + this.host + this.basPath + "/" + this.catalogue + "/products/search?fields=products(code,name,summary,price(FULL),images(DEFAULT),stock(FULL),averageRating),pagination(DEFAULT),sorts(DEFAULT),\n    freeTextSearch&query=" + query + "&pageSize=" + PAGE_SIZE + "&lang=en&curr=" + this.currency, {
+  ProductService.prototype.search = function (catalogue, query, currency, page, onSuccess, onFail) {
+    request_1.default.get("" + this.host + this.basPath + "/" + catalogue + "/products/search?fields=products(code,name,summary,price(FULL),images(DEFAULT),stock(FULL),averageRating),pagination(DEFAULT),sorts(DEFAULT),\n    freeTextSearch&query=" + query + "&pageSize=" + PAGE_SIZE + "&lang=en&curr=" + currency, {
       headers: {
         'Origin': null
       }
@@ -84179,8 +84182,8 @@ function () {
     });
   };
 
-  ProductService.prototype.getByCode = function (code, onSuccess, onFail) {
-    request_1.default.get("" + this.host + this.basPath + "/" + this.catalogue + "/products/" + code + "?fields=code,name,summary,price(FULL),images(DEFAULT),stock(FULL),averageRating&lang=en&curr=" + this.currency, {
+  ProductService.prototype.getByCode = function (catalogue, code, onSuccess, onFail) {
+    request_1.default.get("" + this.host + this.basPath + "/" + catalogue + "/products/" + code + "?fields=code,name,summary,price(FULL),images(DEFAULT),stock(FULL),averageRating&lang=en&curr=" + this.currency, {
       headers: {
         'Origin': null
       }
@@ -84204,7 +84207,114 @@ function () {
 }();
 
 exports.ProductService = ProductService;
-},{"request":"node_modules/request/index.js"}],"default.js":[function(require,module,exports) {
+},{"request":"node_modules/request/index.js"}],"src/service/ui-manager.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var UIManager =
+/** @class */
+function () {
+  function UIManager(productService) {
+    this.productService = productService;
+    this.resultsInfo = document.getElementById('resultsInfo');
+    this.previousPage = document.getElementById('resultsInfo');
+    this.nextPage = document.getElementById('resultsInfo');
+  }
+
+  UIManager.prototype.setDefaultCategory = function (defaultCategory) {
+    var categoryText = document.getElementById('categoryText');
+    categoryText.placeholder = defaultCategory;
+  };
+
+  UIManager.prototype.populateResultsTable = function (response) {
+    var _this = this;
+
+    var resultTable = document.getElementById('resultTable');
+    resultTable.innerHTML = '';
+
+    if (response.products.length > 0) {
+      this.setPaginationInfo(response.pagination);
+      response.products.map(function (x) {
+        console.log('here is the product' + JSON.stringify(x, null, -2));
+
+        var column = _this.createElement('div', 'column');
+
+        var card = _this.createElement('div', 'card');
+
+        column.append(card);
+        var image = document.createElement('img');
+
+        var imageSrc = _this.productService.getImageSrc(_this.getFirstImageOfFormat('thumbnail', x.images));
+
+        console.log(' my image url: ' + imageSrc);
+        image.src = imageSrc;
+        card.append(_this.inDiv(_this.asHeader(3, document.createTextNode(x.name)), 'productTitle'));
+        card.append(_this.inDiv(image, 'imageContainer'));
+        card.append(_this.inDiv(_this.asParagraph(document.createTextNode(x.summary)), 'productSummary'));
+        resultTable.append(column);
+      });
+    } else {
+      this.setNoResultsFound();
+    }
+  };
+
+  UIManager.prototype.setPaginationInfo = function (pagination) {
+    this.resultsInfo.innerHTML = "Displaying " + this.totalShown(pagination) + " of " + pagination.totalResults;
+  };
+
+  UIManager.prototype.totalShown = function (pagination) {
+    return pagination.pageSize < pagination.totalResults ? pagination.pageSize : pagination.totalResults;
+  };
+
+  UIManager.prototype.setNoResultsFound = function () {
+    var resultTable = document.getElementById('resultTable');
+    this.resultsInfo.innerHTML = '';
+    resultTable.innerHTML = '';
+    resultTable.append(this.inDiv(this.asParagraph("\n          |\\      _,,,---,,_\nZZZzz /,`.-'`'    -.  ;-;;,_\n     |,4-  ) )-,_. ,\\ (  `'-'\n    '---''(_/--'  `-'\\_)  No results found.\n    "), 'noResults'));
+  };
+
+  UIManager.prototype.inDiv = function (content, clazz) {
+    var div = this.createElement('div', clazz);
+    div.append(content);
+    return div;
+  };
+
+  UIManager.prototype.asParagraph = function (content) {
+    var paragraph = document.createElement('p');
+    paragraph.appendChild(content);
+    return paragraph;
+  };
+
+  UIManager.prototype.asHeader = function (guage, content) {
+    var paragraph = document.createElement("h" + guage);
+    paragraph.appendChild(content);
+    return paragraph;
+  };
+
+  UIManager.prototype.getFirstImageOfFormat = function (format, images) {
+    return images ? images.find(function (x) {
+      return x.format === format;
+    }) : undefined;
+  };
+
+  UIManager.prototype.createElement = function (type, clazz) {
+    var element = document.createElement(type);
+
+    if (clazz) {
+      element.className = clazz;
+    }
+
+    return element;
+  };
+
+  return UIManager;
+}();
+
+exports.UIManager = UIManager;
+},{}],"default.js":[function(require,module,exports) {
 "use strict";
 
 var __awaiter = this && this.__awaiter || function (thisArg, _arguments, P, generator) {
@@ -84352,24 +84462,13 @@ Object.defineProperty(exports, "__esModule", {
 
 var dc_extensions_sdk_1 = require("dc-extensions-sdk");
 
-var product_service_js_1 = require("./src/service/product-service.js");
+var product_service_1 = require("./src/service/product-service");
 
-function createElement(type, clazz) {
-  var element = document.createElement('div');
-
-  if (clazz) {
-    element.className = clazz;
-  }
-
-  return element;
-}
+var ui_manager_1 = require("./src/service/ui-manager");
 
 function onInit() {
   return __awaiter(this, void 0, void 0, function () {
-    var SDK, value, schema, service, searchButton;
-
-    var _this = this;
-
+    var SDK, value, schema, service, searchText, uiManager, defaultCategory;
     return __generator(this, function (_a) {
       switch (_a.label) {
         case 0:
@@ -84390,37 +84489,22 @@ function onInit() {
           console.log(JSON.stringify(SDK.params));
           console.log(JSON.stringify(schema['ui:extension']));
           console.log("should be origin of " + location.origin);
-          service = new product_service_js_1.ProductService('https://api.cjp2keew1-amplience1-d1-public.model-t.cc.commerce.ondemand.com', '/rest/v2', 'electronics-spa', 'USD');
-          searchButton = document.getElementById('searchButton');
+          service = new product_service_1.ProductService('https://api.cjp2keew1-amplience1-d1-public.model-t.cc.commerce.ondemand.com', '/rest/v2');
+          searchText = document.getElementById('searchText');
+          uiManager = new ui_manager_1.UIManager(service);
+          defaultCategory = 'electronics-spa';
+          uiManager.setDefaultCategory(defaultCategory);
+          service.search(defaultCategory, '', 'USD', 0, function (response) {
+            uiManager.populateResultsTable(response);
+          });
 
-          if (searchButton) {
-            searchButton.addEventListener('click', function () {
-              return __awaiter(_this, void 0, void 0, function () {
-                return __generator(this, function (_a) {
-                  service.search(document.getElementById('searchText').value, 0, function (response) {
-                    var resultTable = document.getElementById('resultTable');
-                    resultTable.innerHTML = '';
-                    response.products.forEach(function (x) {
-                      console.log('here is the product' + JSON.stringify(x, null, -2));
-                      var column = createElement('div', 'column');
-                      var card = createElement('div', 'card');
-                      column.append(card);
-                      var image = document.createElement('img');
-                      var imageSrc = service.getImageSrc(getFirstImageOfFormat('thumbnail', x.images));
-                      console.log(' my image url: ' + imageSrc);
-                      image.src = imageSrc;
-                      card.append(inDiv(asHeader(3, document.createTextNode(x.name)), 'productTitle'));
-                      card.append(inDiv(image, 'imageContainer'));
-                      card.append(inDiv(asParagraph(document.createTextNode(x.summary)), 'productSummary'));
-                      resultTable.append(column);
-                    });
-                  });
-                  document.getElementById('searchText');
-                  return [2
-                  /*return*/
-                  ];
+          if (searchText) {
+            searchText.addEventListener('keyup', function (event) {
+              if (event.key === 'Enter') {
+                service.search(defaultCategory, searchText.value, 'USD', 0, function (response) {
+                  uiManager.populateResultsTable(response);
                 });
-              });
+              }
             });
           }
 
@@ -84432,32 +84516,8 @@ function onInit() {
   });
 }
 
-function inDiv(content, clazz) {
-  var row = createElement('div', clazz);
-  row.append(content);
-  return row;
-}
-
-function asParagraph(content) {
-  var paragraph = document.createElement('p');
-  paragraph.appendChild(content);
-  return paragraph;
-}
-
-function asHeader(guage, content) {
-  var paragraph = document.createElement("h" + guage);
-  paragraph.appendChild(content);
-  return paragraph;
-}
-
-function getFirstImageOfFormat(format, images) {
-  return images ? images.find(function (x) {
-    return x.format === format;
-  }) : undefined;
-}
-
 onInit();
-},{"dc-extensions-sdk":"node_modules/dc-extensions-sdk/dist/dc-extensions-sdk.es5.js","./src/service/product-service.js":"src/service/product-service.js"}],"../../../../../../../usr/local/lib/node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"dc-extensions-sdk":"node_modules/dc-extensions-sdk/dist/dc-extensions-sdk.es5.js","./src/service/product-service":"src/service/product-service.js","./src/service/ui-manager":"src/service/ui-manager.js"}],"../../../../../../../usr/local/lib/node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -84485,7 +84545,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "62696" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "56571" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

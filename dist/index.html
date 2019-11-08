@@ -10,16 +10,20 @@
 <body ng-controller="empCtrl">
 <table>
     <tr id="searchBar">
-        <td><input id="searchText" ng-model="query[queryBy]" placeholder="Search"></td>
+        <td><input id="categoryText" class="searchBox" ng-model="query[queryBy]" placeholder="category"></td>
         <td>
-            <button id="searchButton">search</button>
+            <div id="separator"><p>/</p></div>
+        </td>
+        <td><input id="searchText" class="searchBox" ng-model="query[queryBy]" placeholder="Search"></td>
+        <td><p id="previousPage" class="pageDirection"><</p></td>
+        <td><p id="nextPage" class="pageDirection"></p><p>></p></td>
+        <td>
+            <div id="resultsInfoContainer"><p id="resultsInfo"></p></div>
         </td>
     </tr>
 </table>
 <hr>
-<div id="resultTable" class="row">
-
-</div>
+<div id="resultTable" class="row"></div>
 </body>
 
 
