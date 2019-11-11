@@ -17,6 +17,8 @@ export class ProductService {
   constructor(
       private readonly host: string,
       private readonly basPath: string,
+      private readonly defaultNotFoundImage: string,
+      private readonly authTokenSupplier?: () => string,
       private readonly imageFormat: string = 'thumbnail'
   ) {
     this.url = `${ sanitise(host) }/${ sanitise(basPath) }`
@@ -31,11 +33,8 @@ export class ProductService {
       onFail?: (error: any) => void
   ) {
     request.get(
-        `${ this.url }/${ catalogue }/products/search?${ PRODUCT_FIELDS },pagination(DEFAULT),sorts(DEFAULT),freeTextSearch&query=${ query }&pageSize=${ PAGE_SIZE }&lang=en&curr=${ currency }`, {
-          headers: {
-            'Origin': null
-          }
-        },
+        `${ this.url }/${ catalogue }/products/search?${ PRODUCT_FIELDS },pagination(DEFAULT),sorts(DEFAULT),freeTextSearch&query=${ query }&pageSize=${ PAGE_SIZE }&lang=en&curr=${ currency }`,
+        this.buildRequestOptions(),
         (error: any, response: Response, body: any) => {
           if (error) {
             if (onFail) {
@@ -56,11 +55,8 @@ export class ProductService {
       onSuccess: (response: ProductResult) => void,
       onFail?: (error: any) => void
   ) {
-    request.get(`${ this.host }${ this.basPath }/${ catalogue }/products/${ code }?fields=code,name,summary,price(FULL),images(DEFAULT),stock(FULL),averageRating&lang=en&curr=${ currency }`, {
-          headers: {
-            'Origin': null
-          }
-        },
+    request.get(`${ this.host }${ this.basPath }/${ catalogue }/products/${ code }?fields=code,name,summary,price(FULL),images(DEFAULT),stock(FULL),averageRating&lang=en&curr=${ currency }`,
+        this.buildRequestOptions(),
         (error: any, response: Response, body: any) => {
           if (error) {
             if (onFail) {
@@ -73,22 +69,30 @@ export class ProductService {
     );
   }
 
+  public getFirstImageOfFormat(images: ImageContext[], imageFormat: string): ImageContext | undefined {
+    return (images) ? images.find(x => x.format === imageFormat) : undefined;
+  }
+
+  public getImageSrc(image?: ImageContext): string {
+    return (image) ? `${ this.host }/${ image.url }` : this.defaultNotFoundImage;
+  }
+
+  private buildRequestOptions(): any {
+    return (this.authTokenSupplier) ? {
+      headers: {
+        'Authorization': `Bearer ${ this.authTokenSupplier() }`
+      }
+    } : {}
+  }
+
   private setDefaultImagesForProducts(result: ProductResult): ProductResult {
     result.products.forEach(x => {
-      const defaultImage = this.getFirstImageOfFormat(x.images);
+      const defaultImage = this.getFirstImageOfFormat(x.images, this.imageFormat);
       if (defaultImage) {
         x.defaultImageUrl = this.getImageSrc(defaultImage);
       }
     });
     return result;
-  }
-  
-  private getFirstImageOfFormat(images: ImageContext[]): ImageContext | undefined {
-    return (images) ? images.find(x => x.format === this.imageFormat) : undefined;
-  }
-
-  public getImageSrc(image?: ImageContext): string {
-    return (image) ? `${ this.host }/${ image.url }` : 'https://apps.dev-artifacts.adis.ws/cms-icons/master/latest/256/ca-types-carousel.png';
   }
 
 }

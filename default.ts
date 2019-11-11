@@ -16,7 +16,8 @@ async function onInit() {
 
   const service = new ProductService(
       'https://api.cjp2keew1-amplience1-d1-public.model-t.cc.commerce.ondemand.com',
-      '/rest/v2'
+      '/rest/v2',
+      'https://apps.dev-artifacts.adis.ws/cms-icons/master/latest/256/ca-types-carousel.png'
   );
 
   const searchText = document.getElementById('searchText') as HTMLInputElement;
@@ -27,7 +28,6 @@ async function onInit() {
     service.search(defaultCategory, '', 'USD', 0, response => {
       uiManager.populateResultsTable(response);
     });
-
 
   if (searchText) {
     searchText.addEventListener('keyup', function (event) {
