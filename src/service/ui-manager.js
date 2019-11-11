@@ -23,7 +23,7 @@ var UIManager = /** @class */ (function () {
                 var card = _this.createElement('div', 'card');
                 column.append(card);
                 var image = document.createElement('img');
-                var imageSrc = _this.productService.getImageSrc(_this.getFirstImageOfFormat('thumbnail', x.images));
+                var imageSrc = _this.productService.getImageSrc(_this.getFirstImageOfFormat(x.images));
                 console.log(' my image url: ' + imageSrc);
                 image.src = imageSrc;
                 card.append(_this.inDiv(_this.asHeader(3, document.createTextNode(x.name)), 'productTitle'));
@@ -32,21 +32,12 @@ var UIManager = /** @class */ (function () {
                 resultTable.append(column);
             });
         }
-        else {
-            this.setNoResultsFound();
-        }
     };
     UIManager.prototype.setPaginationInfo = function (pagination) {
         this.resultsInfo.innerHTML = "Displaying " + (this.totalShown(pagination)) + " of " + pagination.totalResults;
     };
     UIManager.prototype.totalShown = function (pagination) {
         return (pagination.pageSize < pagination.totalResults) ? pagination.pageSize : pagination.totalResults;
-    };
-    UIManager.prototype.setNoResultsFound = function () {
-        var resultTable = document.getElementById('resultTable');
-        this.resultsInfo.innerHTML = '';
-        resultTable.innerHTML = '';
-        resultTable.append(this.inDiv(this.asParagraph("\n          |\\      _,,,---,,_\nZZZzz /,`.-'`'    -.  ;-;;,_\n     |,4-  ) )-,_. ,\\ (  `'-'\n    '---''(_/--'  `-'\\_)  No results found.\n    "), 'noResults'));
     };
     UIManager.prototype.inDiv = function (content, clazz) {
         var div = this.createElement('div', clazz);

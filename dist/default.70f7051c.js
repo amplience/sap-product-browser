@@ -14400,27 +14400,27 @@ MemoryCookieStore.prototype.getAllCookies = function (cb) {
 };
 },{"./store":"node_modules/tough-cookie/lib/store.js","./permuteDomain":"node_modules/tough-cookie/lib/permuteDomain.js","./pathMatch":"node_modules/tough-cookie/lib/pathMatch.js","util":"../../../../../../../usr/local/lib/node_modules/parcel/node_modules/util/util.js"}],"node_modules/tough-cookie/package.json":[function(require,module,exports) {
 module.exports = {
-  "_from": "tough-cookie@~2.4.3",
+  "_args": [["tough-cookie@2.4.3", "/Users/bgreen/Documents/Projects/Amplience/JS/SAP-product-browser"]],
+  "_from": "tough-cookie@2.4.3",
   "_id": "tough-cookie@2.4.3",
   "_inBundle": false,
   "_integrity": "sha512-Q5srk/4vDM54WJsJio3XNn6K2sCG+CQ8G5Wz6bZhRZoAe/+TxjWB/GlFAnYEbkYVlON9FMk/fE3h2RLpPXo4lQ==",
   "_location": "/tough-cookie",
   "_phantomChildren": {},
   "_requested": {
-    "type": "range",
+    "type": "version",
     "registry": true,
-    "raw": "tough-cookie@~2.4.3",
+    "raw": "tough-cookie@2.4.3",
     "name": "tough-cookie",
     "escapedName": "tough-cookie",
-    "rawSpec": "~2.4.3",
+    "rawSpec": "2.4.3",
     "saveSpec": null,
-    "fetchSpec": "~2.4.3"
+    "fetchSpec": "2.4.3"
   },
   "_requiredBy": ["/request"],
   "_resolved": "https://registry.npmjs.org/tough-cookie/-/tough-cookie-2.4.3.tgz",
-  "_shasum": "53f36da3f47783b0925afa06ff9f3b165280f781",
-  "_spec": "tough-cookie@~2.4.3",
-  "_where": "/Users/bgreen/Documents/Projects/Amplience/JS/SAP-product-browser/node_modules/request",
+  "_spec": "2.4.3",
+  "_where": "/Users/bgreen/Documents/Projects/Amplience/JS/SAP-product-browser",
   "author": {
     "name": "Jeremy Stashewsky",
     "email": "jstash@gmail.com"
@@ -14428,7 +14428,6 @@ module.exports = {
   "bugs": {
     "url": "https://github.com/salesforce/tough-cookie/issues"
   },
-  "bundleDependencies": false,
   "contributors": [{
     "name": "Alexander Savin"
   }, {
@@ -14446,7 +14445,6 @@ module.exports = {
     "psl": "^1.1.24",
     "punycode": "^1.4.1"
   },
-  "deprecated": false,
   "description": "RFC6265 Cookies and Cookie Jar for node.js",
   "devDependencies": {
     "async": "^1.4.2",
@@ -84156,17 +84154,31 @@ Object.defineProperty(exports, "__esModule", {
 var request_1 = __importDefault(require("request"));
 
 var PAGE_SIZE = 25;
+var PRODUCT_FIELDS = 'fields=products(code,name,summary,price(FULL),images(DEFAULT),stock(FULL),averageRating)';
+
+function sanitise(value) {
+  var partial = value.startsWith('/') ? value.substring(1, value.length) : value;
+  return partial.endsWith('/') ? partial.substring(0, partial.length - 1) : partial;
+}
 
 var ProductService =
 /** @class */
 function () {
-  function ProductService(host, basPath) {
+  function ProductService(host, basPath, imageFormat) {
+    if (imageFormat === void 0) {
+      imageFormat = 'thumbnail';
+    }
+
     this.host = host;
     this.basPath = basPath;
+    this.imageFormat = imageFormat;
+    this.url = sanitise(host) + "/" + sanitise(basPath);
   }
 
   ProductService.prototype.search = function (catalogue, query, currency, page, onSuccess, onFail) {
-    request_1.default.get("" + this.host + this.basPath + "/" + catalogue + "/products/search?fields=products(code,name,summary,price(FULL),images(DEFAULT),stock(FULL),averageRating),pagination(DEFAULT),sorts(DEFAULT),\n    freeTextSearch&query=" + query + "&pageSize=" + PAGE_SIZE + "&lang=en&curr=" + currency, {
+    var _this = this;
+
+    request_1.default.get(this.url + "/" + catalogue + "/products/search?" + PRODUCT_FIELDS + ",pagination(DEFAULT),sorts(DEFAULT),freeTextSearch&query=" + query + "&pageSize=" + PAGE_SIZE + "&lang=en&curr=" + currency, {
       headers: {
         'Origin': null
       }
@@ -84178,12 +84190,12 @@ function () {
         }
       }
 
-      onSuccess(JSON.parse(body));
+      onSuccess(_this.setDefaultImagesForProducts(JSON.parse(body)));
     });
   };
 
-  ProductService.prototype.getByCode = function (catalogue, code, onSuccess, onFail) {
-    request_1.default.get("" + this.host + this.basPath + "/" + catalogue + "/products/" + code + "?fields=code,name,summary,price(FULL),images(DEFAULT),stock(FULL),averageRating&lang=en&curr=" + this.currency, {
+  ProductService.prototype.getByCode = function (catalogue, code, currency, onSuccess, onFail) {
+    request_1.default.get("" + this.host + this.basPath + "/" + catalogue + "/products/" + code + "?fields=code,name,summary,price(FULL),images(DEFAULT),stock(FULL),averageRating&lang=en&curr=" + currency, {
       headers: {
         'Origin': null
       }
@@ -84197,6 +84209,27 @@ function () {
         onSuccess(body.d.results);
       }
     });
+  };
+
+  ProductService.prototype.setDefaultImagesForProducts = function (result) {
+    var _this = this;
+
+    result.products.forEach(function (x) {
+      var defaultImage = _this.getFirstImageOfFormat(x.images);
+
+      if (defaultImage) {
+        x.defaultImageUrl = _this.getImageSrc(defaultImage);
+      }
+    });
+    return result;
+  };
+
+  ProductService.prototype.getFirstImageOfFormat = function (images) {
+    var _this = this;
+
+    return images ? images.find(function (x) {
+      return x.format === _this.imageFormat;
+    }) : undefined;
   };
 
   ProductService.prototype.getImageSrc = function (image) {
@@ -84247,7 +84280,7 @@ function () {
         column.append(card);
         var image = document.createElement('img');
 
-        var imageSrc = _this.productService.getImageSrc(_this.getFirstImageOfFormat('thumbnail', x.images));
+        var imageSrc = _this.productService.getImageSrc(_this.getFirstImageOfFormat(x.images));
 
         console.log(' my image url: ' + imageSrc);
         image.src = imageSrc;
@@ -84256,8 +84289,6 @@ function () {
         card.append(_this.inDiv(_this.asParagraph(document.createTextNode(x.summary)), 'productSummary'));
         resultTable.append(column);
       });
-    } else {
-      this.setNoResultsFound();
     }
   };
 
@@ -84267,13 +84298,6 @@ function () {
 
   UIManager.prototype.totalShown = function (pagination) {
     return pagination.pageSize < pagination.totalResults ? pagination.pageSize : pagination.totalResults;
-  };
-
-  UIManager.prototype.setNoResultsFound = function () {
-    var resultTable = document.getElementById('resultTable');
-    this.resultsInfo.innerHTML = '';
-    resultTable.innerHTML = '';
-    resultTable.append(this.inDiv(this.asParagraph("\n          |\\      _,,,---,,_\nZZZzz /,`.-'`'    -.  ;-;;,_\n     |,4-  ) )-,_. ,\\ (  `'-'\n    '---''(_/--'  `-'\\_)  No results found.\n    "), 'noResults'));
   };
 
   UIManager.prototype.inDiv = function (content, clazz) {
@@ -84545,7 +84569,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "56571" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "58457" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

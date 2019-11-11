@@ -3,15 +3,23 @@ import { ProductResult } from '../model/product-result';
 import { ImageContext } from '../model/image-context.js';
 
 const PAGE_SIZE = 25;
+const PRODUCT_FIELDS = 'fields=products(code,name,summary,price(FULL),images(DEFAULT),stock(FULL),averageRating)';
+
+
+function sanitise(value: string): string {
+  const partial = (value.startsWith('/')) ? value.substring(1, value.length) : value;
+  return (partial.endsWith('/')) ? partial.substring(0, partial.length - 1) : partial
+}
 
 export class ProductService {
-
+  private readonly url: string;
 
   constructor(
       private readonly host: string,
-      private readonly basPath: string
+      private readonly basPath: string,
+      private readonly imageFormat: string = 'thumbnail'
   ) {
-
+    this.url = `${ sanitise(host) }/${ sanitise(basPath) }`
   }
 
   public search(
@@ -22,8 +30,8 @@ export class ProductService {
       onSuccess: (response: ProductResult) => void,
       onFail?: (error: any) => void
   ) {
-    request.get(`${ this.host }${ this.basPath }/${ catalogue }/products/search?fields=products(code,name,summary,price(FULL),images(DEFAULT),stock(FULL),averageRating),pagination(DEFAULT),sorts(DEFAULT),
-    freeTextSearch&query=${ query }&pageSize=${ PAGE_SIZE }&lang=en&curr=${currency }`, {
+    request.get(
+        `${ this.url }/${ catalogue }/products/search?${ PRODUCT_FIELDS },pagination(DEFAULT),sorts(DEFAULT),freeTextSearch&query=${ query }&pageSize=${ PAGE_SIZE }&lang=en&curr=${ currency }`, {
           headers: {
             'Origin': null
           }
@@ -35,7 +43,7 @@ export class ProductService {
               throw new Error('unable to retrieve results from SAP.')
             }
           }
-          onSuccess(JSON.parse(body))
+          onSuccess(this.setDefaultImagesForProducts(JSON.parse(body)))
 
         }
     );
@@ -44,10 +52,11 @@ export class ProductService {
   public getByCode(
       catalogue: string,
       code: string,
+      currency: string,
       onSuccess: (response: ProductResult) => void,
       onFail?: (error: any) => void
   ) {
-    request.get(`${ this.host }${ this.basPath }/${ catalogue }/products/${ code }?fields=code,name,summary,price(FULL),images(DEFAULT),stock(FULL),averageRating&lang=en&curr=${ this.currency }`, {
+    request.get(`${ this.host }${ this.basPath }/${ catalogue }/products/${ code }?fields=code,name,summary,price(FULL),images(DEFAULT),stock(FULL),averageRating&lang=en&curr=${ currency }`, {
           headers: {
             'Origin': null
           }
@@ -62,6 +71,20 @@ export class ProductService {
           }
         }
     );
+  }
+
+  private setDefaultImagesForProducts(result: ProductResult): ProductResult {
+    result.products.forEach(x => {
+      const defaultImage = this.getFirstImageOfFormat(x.images);
+      if (defaultImage) {
+        x.defaultImageUrl = this.getImageSrc(defaultImage);
+      }
+    });
+    return result;
+  }
+  
+  private getFirstImageOfFormat(images: ImageContext[]): ImageContext | undefined {
+    return (images) ? images.find(x => x.format === this.imageFormat) : undefined;
   }
 
   public getImageSrc(image?: ImageContext): string {

@@ -30,7 +30,7 @@ export class UIManager {
         column.append(card);
 
         let image = document.createElement('img');
-        let imageSrc = this.productService.getImageSrc(this.getFirstImageOfFormat('thumbnail', x.images));
+        let imageSrc = this.productService.getImageSrc(this.getFirstImageOfFormat(, x.images));
         console.log(' my image url: ' + imageSrc);
         image.src = imageSrc;
         card.append(this.inDiv(this.asHeader(3, document.createTextNode(x.name)), 'productTitle'));
@@ -39,8 +39,6 @@ export class UIManager {
 
         resultTable.append(column)
       })
-    } else {
-      this.setNoResultsFound()
     }
   }
 
@@ -50,19 +48,6 @@ export class UIManager {
 
   private totalShown(pagination: Pagination) {
     return (pagination.pageSize < pagination.totalResults) ? pagination.pageSize : pagination.totalResults;
-  }
-
-  public setNoResultsFound() {
-    const resultTable = document.getElementById('resultTable') as HTMLDivElement;
-    this.resultsInfo.innerHTML = '';
-    resultTable.innerHTML = '';
-    resultTable.append(this.inDiv(this.asParagraph(`
-          |\\      _,,,---,,_
-ZZZzz /,\`.-'\`'    -.  ;-;;,_
-     |,4-  ) )-,_. ,\\ (  \`'-'
-    '---''(_/--'  \`-'\\_)  No results found.
-    `), 'noResults'));
-
   }
 
   private inDiv(content: any, clazz?: string) {
@@ -86,7 +71,6 @@ ZZZzz /,\`.-'\`'    -.  ;-;;,_
   private getFirstImageOfFormat(format: string, images: ImageContext[]): ImageContext | undefined {
     return (images) ? images.find(x => x.format === format) : undefined;
   }
-
 
   private createElement(type: string, clazz?: string) {
     const element = document.createElement(type);
