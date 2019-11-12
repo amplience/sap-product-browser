@@ -86,9 +86,9 @@ var ProductService = /** @class */ (function () {
     ProductService.prototype.getByCode = function (catalogue, code, currency, onSuccess, onFail) {
         var _this = this;
         fetch("" + this.host + this.basPath + "/" + catalogue + "/products/" + code + "?fields=code,name,summary,price(FULL),images(DEFAULT),stock(FULL),averageRating&lang=en&curr=" + currency, this.buildRequestOptions()).then(function (response) { return __awaiter(_this, void 0, void 0, function () {
-            var _a;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
+            var product;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
                     case 0:
                         if (!response.ok) {
                             if (onFail) {
@@ -98,10 +98,11 @@ var ProductService = /** @class */ (function () {
                                 throw new Error("unable to retrieve product by code from SAP: " + response.statusText);
                             }
                         }
-                        _a = onSuccess;
                         return [4 /*yield*/, response.json()];
                     case 1:
-                        _a.apply(void 0, [_b.sent()]);
+                        product = _a.sent();
+                        product.defaultImageUrl = this.getImageSrc(this.getFirstImageOfFormat(product.images, this.defaultImageFormat, this.defaultImageType));
+                        onSuccess(product);
                         return [2 /*return*/];
                 }
             });

@@ -73,7 +73,11 @@ export class ProductService {
               throw new Error(`unable to retrieve product by code from SAP: ${ response.statusText }`)
             }
           }
-          onSuccess(await response.json())
+          let product: Product = await response.json();
+          product.defaultImageUrl = this.getImageSrc(
+              this.getFirstImageOfFormat(product.images, this.defaultImageFormat, this.defaultImageType)
+          );
+          onSuccess(product)
         }
     );
   }
