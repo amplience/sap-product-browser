@@ -4,7 +4,7 @@ import { PriceContext } from './price-context.js';
 export interface Product {
   code: number,
   images: ImageContext[],
-  defaultImageUrl?: string,
+  defaultImageUrl: string,
   name: string,
   price: PriceContext,
   stock: { stockLevelStatus: string }

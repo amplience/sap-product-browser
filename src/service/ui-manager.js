@@ -23,7 +23,7 @@ var UIManager = /** @class */ (function () {
                 var card = _this.createElement('div', 'card');
                 column.append(card);
                 var image = document.createElement('img');
-                var imageSrc = _this.productService.getImageSrc(_this.getFirstImageOfFormat(x.images));
+                var imageSrc = x.defaultImageUrl;
                 console.log(' my image url: ' + imageSrc);
                 image.src = imageSrc;
                 card.append(_this.inDiv(_this.asHeader(3, document.createTextNode(x.name)), 'productTitle'));
@@ -53,9 +53,6 @@ var UIManager = /** @class */ (function () {
         var paragraph = document.createElement("h" + guage);
         paragraph.appendChild(content);
         return paragraph;
-    };
-    UIManager.prototype.getFirstImageOfFormat = function (format, images) {
-        return (images) ? images.find(function (x) { return x.format === format; }) : undefined;
     };
     UIManager.prototype.createElement = function (type, clazz) {
         var element = document.createElement(type);

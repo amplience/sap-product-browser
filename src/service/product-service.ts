@@ -1,4 +1,3 @@
-import request, { Response } from 'request';
 import { ProductResult } from '../model/product-result';
 import { ImageContext } from '../model/image-context.js';
 
@@ -19,7 +18,8 @@ export class ProductService {
       private readonly basPath: string,
       private readonly defaultNotFoundImage: string,
       private readonly authTokenSupplier?: () => string,
-      private readonly imageFormat: string = 'thumbnail'
+      private readonly defaultImageFormat: string = 'thumbnail',
+      private readonly defaultImageType: string = 'PRIMARY'
   ) {
     this.url = `${ sanitise(host) }/${ sanitise(basPath) }`
   }
@@ -30,19 +30,20 @@ export class ProductService {
       currency: string,
       page: number,
       onSuccess: (response: ProductResult) => void,
-      onFail?: (error: any) => void
+      onFail?: (code: number, message: any) => void
   ) {
-    request.get(
+    fetch(
         `${ this.url }/${ catalogue }/products/search?${ PRODUCT_FIELDS },pagination(DEFAULT),sorts(DEFAULT),freeTextSearch&query=${ query }&pageSize=${ PAGE_SIZE }&lang=en&curr=${ currency }`,
-        this.buildRequestOptions(),
-        (error: any, response: Response, body: any) => {
-          if (error) {
+        this.buildRequestOptions()
+    ).then(async response => {
+          if (!response.ok) {
             if (onFail) {
-              onFail(error);
-              throw new Error('unable to retrieve results from SAP.')
+              onFail(response.status, response.statusText);
+            } else {
+              throw new Error(`unable to retrieve results from SAP: ${ response.statusText }`)
             }
           }
-          onSuccess(this.setDefaultImagesForProducts(JSON.parse(body)))
+          onSuccess(this.setDefaultImagesForProducts(await response.json()))
 
         }
     );
@@ -53,24 +54,29 @@ export class ProductService {
       code: string,
       currency: string,
       onSuccess: (response: ProductResult) => void,
-      onFail?: (error: any) => void
+      onFail?: (code: number, message: any) => void
   ) {
-    request.get(`${ this.host }${ this.basPath }/${ catalogue }/products/${ code }?fields=code,name,summary,price(FULL),images(DEFAULT),stock(FULL),averageRating&lang=en&curr=${ currency }`,
-        this.buildRequestOptions(),
-        (error: any, response: Response, body: any) => {
-          if (error) {
+    fetch(`${ this.host }${ this.basPath }/${ catalogue }/products/${ code }?fields=code,name,summary,price(FULL),images(DEFAULT),stock(FULL),averageRating&lang=en&curr=${ currency }`,
+        this.buildRequestOptions()
+    ).then(async response => {
+          if (!response.ok) {
             if (onFail) {
-              onFail(error);
-              throw new Error('unable to retrieve product by code from SAP.')
+              onFail(response.status, response.statusText);
+            } else {
+              throw new Error(`unable to retrieve product by code from SAP: ${ response.statusText }`)
             }
-            onSuccess(body.d.results)
           }
+          onSuccess(await response.json())
         }
     );
   }
 
-  public getFirstImageOfFormat(images: ImageContext[], imageFormat: string): ImageContext | undefined {
-    return (images) ? images.find(x => x.format === imageFormat) : undefined;
+  public getFirstImageOfFormat(
+      images: ImageContext[],
+      imageFormat: string,
+      imageType: string
+  ): ImageContext | undefined {
+    return (images) ? images.find(x => x.format === imageFormat && x.imageType === imageType) : undefined;
   }
 
   public getImageSrc(image?: ImageContext): string {
@@ -87,10 +93,10 @@ export class ProductService {
 
   private setDefaultImagesForProducts(result: ProductResult): ProductResult {
     result.products.forEach(x => {
-      const defaultImage = this.getFirstImageOfFormat(x.images, this.imageFormat);
-      if (defaultImage) {
-        x.defaultImageUrl = this.getImageSrc(defaultImage);
-      }
+      x.defaultImageUrl = this.getImageSrc(
+          this.getFirstImageOfFormat(x.images, this.defaultImageFormat, this.defaultImageType)
+      );
+
     });
     return result;
   }

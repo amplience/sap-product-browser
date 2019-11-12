@@ -54,7 +54,7 @@ function onInit() {
                     console.log(JSON.stringify(SDK.params));
                     console.log(JSON.stringify(schema['ui:extension']));
                     console.log("should be origin of " + location.origin);
-                    service = new product_service_1.ProductService('https://api.cjp2keew1-amplience1-d1-public.model-t.cc.commerce.ondemand.com', '/rest/v2');
+                    service = new product_service_1.ProductService('https://api.cjp2keew1-amplience1-d1-public.model-t.cc.commerce.ondemand.com', '/rest/v2', 'https://apps.dev-artifacts.adis.ws/cms-icons/master/latest/256/ca-types-carousel.png');
                     searchText = document.getElementById('searchText');
                     uiManager = new ui_manager_1.UIManager(service);
                     defaultCategory = 'electronics-spa';

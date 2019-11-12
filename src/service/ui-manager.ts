@@ -1,6 +1,5 @@
 import { ProductResult } from '../model/product-result';
 import { ProductService } from './product-service.js';
-import { ImageContext } from '../model/image-context.js';
 import { Pagination } from '../model/pagination.js';
 
 export class UIManager {
@@ -30,7 +29,7 @@ export class UIManager {
         column.append(card);
 
         let image = document.createElement('img');
-        let imageSrc = this.productService.getImageSrc(this.getFirstImageOfFormat(, x.images));
+        let imageSrc = x.defaultImageUrl;
         console.log(' my image url: ' + imageSrc);
         image.src = imageSrc;
         card.append(this.inDiv(this.asHeader(3, document.createTextNode(x.name)), 'productTitle'));
@@ -66,10 +65,6 @@ export class UIManager {
     const paragraph = document.createElement(`h${ guage }`);
     paragraph.appendChild(content);
     return paragraph;
-  }
-
-  private getFirstImageOfFormat(format: string, images: ImageContext[]): ImageContext | undefined {
-    return (images) ? images.find(x => x.format === format) : undefined;
   }
 
   private createElement(type: string, clazz?: string) {
