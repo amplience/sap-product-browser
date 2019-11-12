@@ -56,9 +56,10 @@ var ProductService = /** @class */ (function () {
     ProductService.prototype.search = function (catalogue, query, currency, page, onSuccess, onFail) {
         var _this = this;
         fetch(this.url + "/" + catalogue + "/products/search?" + PRODUCT_FIELDS + ",pagination(DEFAULT),sorts(DEFAULT),freeTextSearch&query=" + query + "&pageSize=" + PAGE_SIZE + "&lang=en&curr=" + currency, this.buildRequestOptions()).then(function (response) { return __awaiter(_this, void 0, void 0, function () {
-            var _a, _b;
-            return __generator(this, function (_c) {
-                switch (_c.label) {
+            var result;
+            var _this = this;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
                     case 0:
                         if (!response.ok) {
                             if (onFail) {
@@ -68,11 +69,15 @@ var ProductService = /** @class */ (function () {
                                 throw new Error("unable to retrieve results from SAP: " + response.statusText);
                             }
                         }
-                        _a = onSuccess;
-                        _b = this.setDefaultImagesForProducts;
                         return [4 /*yield*/, response.json()];
                     case 1:
-                        _a.apply(void 0, [_b.apply(this, [_c.sent()])]);
+                        result = _a.sent();
+                        result.products.forEach(function (x) {
+                            _this.getByCode(catalogue, x.code, currency, function (y) {
+                                console.log("this is the result on get by code:" + y);
+                            });
+                        });
+                        onSuccess(this.setDefaultImagesForProducts(result));
                         return [2 /*return*/];
                 }
             });
@@ -111,7 +116,7 @@ var ProductService = /** @class */ (function () {
     ProductService.prototype.buildRequestOptions = function () {
         return (this.authTokenSupplier) ? {
             headers: {
-                'Authorization': "Bearer " + this.authTokenSupplier()
+                'Authorization': this.authTokenSupplier()
             }
         } : {};
     };

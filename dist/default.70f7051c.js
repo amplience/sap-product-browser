@@ -2539,10 +2539,12 @@ function () {
 
     fetch(this.url + "/" + catalogue + "/products/search?" + PRODUCT_FIELDS + ",pagination(DEFAULT),sorts(DEFAULT),freeTextSearch&query=" + query + "&pageSize=" + PAGE_SIZE + "&lang=en&curr=" + currency, this.buildRequestOptions()).then(function (response) {
       return __awaiter(_this, void 0, void 0, function () {
-        var _a, _b;
+        var result;
 
-        return __generator(this, function (_c) {
-          switch (_c.label) {
+        var _this = this;
+
+        return __generator(this, function (_a) {
+          switch (_a.label) {
             case 0:
               if (!response.ok) {
                 if (onFail) {
@@ -2552,15 +2554,18 @@ function () {
                 }
               }
 
-              _a = onSuccess;
-              _b = this.setDefaultImagesForProducts;
               return [4
               /*yield*/
               , response.json()];
 
             case 1:
-              _a.apply(void 0, [_b.apply(this, [_c.sent()])]);
-
+              result = _a.sent();
+              result.products.forEach(function (x) {
+                _this.getByCode(catalogue, x.code, currency, function (y) {
+                  console.log("this is the result on get by code:" + y);
+                });
+              });
+              onSuccess(this.setDefaultImagesForProducts(result));
               return [2
               /*return*/
               ];
@@ -2618,7 +2623,7 @@ function () {
   ProductService.prototype.buildRequestOptions = function () {
     return this.authTokenSupplier ? {
       headers: {
-        'Authorization': "Bearer " + this.authTokenSupplier()
+        'Authorization': this.authTokenSupplier()
       }
     } : {};
   };
@@ -2667,8 +2672,6 @@ function () {
     if (response.products.length > 0) {
       this.setPaginationInfo(response.pagination);
       response.products.map(function (x) {
-        console.log('here is the product' + JSON.stringify(x, null, -2));
-
         var column = _this.createElement('div', 'column');
 
         var card = _this.createElement('div', 'card');
@@ -2676,7 +2679,6 @@ function () {
         column.append(card);
         var image = document.createElement('img');
         var imageSrc = x.defaultImageUrl;
-        console.log(' my image url: ' + imageSrc);
         image.src = imageSrc;
         card.append(_this.inDiv(_this.asHeader(3, document.createTextNode(x.name)), 'productTitle'));
         card.append(_this.inDiv(image, 'imageContainer'));
@@ -2898,9 +2900,6 @@ function onInit() {
         case 2:
           value = _a.sent();
           schema = SDK.field.schema;
-          console.log(JSON.stringify(SDK.params));
-          console.log(JSON.stringify(schema['ui:extension']));
-          console.log("should be origin of " + location.origin);
           service = new product_service_1.ProductService('https://api.cjp2keew1-amplience1-d1-public.model-t.cc.commerce.ondemand.com', '/rest/v2', 'https://apps.dev-artifacts.adis.ws/cms-icons/master/latest/256/ca-types-carousel.png');
           searchText = document.getElementById('searchText');
           uiManager = new ui_manager_1.UIManager(service);

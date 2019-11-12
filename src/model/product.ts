@@ -2,7 +2,7 @@ import { ImageContext } from './image-context';
 import { PriceContext } from './price-context.js';
 
 export interface Product {
-  code: number,
+  code: string,
   images: ImageContext[],
   defaultImageUrl: string,
   name: string,

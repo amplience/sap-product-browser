@@ -1,5 +1,6 @@
 import { ProductResult } from '../model/product-result';
-import { ImageContext } from '../model/image-context.js';
+import { ImageContext } from '../model/image-context';
+import { Product } from '../model/product';
 
 const PAGE_SIZE = 25;
 const PRODUCT_FIELDS = 'fields=products(code,name,summary,price(FULL),images(DEFAULT),stock(FULL),averageRating)';
@@ -43,7 +44,13 @@ export class ProductService {
               throw new Error(`unable to retrieve results from SAP: ${ response.statusText }`)
             }
           }
-          onSuccess(this.setDefaultImagesForProducts(await response.json()))
+          let result: ProductResult = await response.json();
+          result.products.forEach(x => {
+            this.getByCode(catalogue, x.code, currency, y => {
+              console.log(`this is the result on get by code:${ y }`)
+            })
+          });
+          onSuccess(this.setDefaultImagesForProducts(result))
 
         }
     );
@@ -53,7 +60,7 @@ export class ProductService {
       catalogue: string,
       code: string,
       currency: string,
-      onSuccess: (response: ProductResult) => void,
+      onSuccess: (response: Product) => void,
       onFail?: (code: number, message: any) => void
   ) {
     fetch(`${ this.host }${ this.basPath }/${ catalogue }/products/${ code }?fields=code,name,summary,price(FULL),images(DEFAULT),stock(FULL),averageRating&lang=en&curr=${ currency }`,
@@ -86,7 +93,7 @@ export class ProductService {
   private buildRequestOptions(): any {
     return (this.authTokenSupplier) ? {
       headers: {
-        'Authorization': `Bearer ${ this.authTokenSupplier() }`
+        'Authorization': this.authTokenSupplier()
       }
     } : {}
   }
@@ -96,7 +103,6 @@ export class ProductService {
       x.defaultImageUrl = this.getImageSrc(
           this.getFirstImageOfFormat(x.images, this.defaultImageFormat, this.defaultImageType)
       );
-
     });
     return result;
   }
