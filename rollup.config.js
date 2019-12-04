@@ -8,7 +8,8 @@ export default [
         output: {
                 dir: './dist',
                 format: 'umd',
-                name: 'sap-product-browser'
+                name: 'sap-product-browser',
+                sourcemap: true
         },
         plugins: [
             typescript({
@@ -22,7 +23,8 @@ export default [
         input: './src/index.ts',
         output: {
             file: 'dist/index.main.js',
-            format: 'cjs'
+            format: 'cjs',
+            sourcemap: true
         },
         plugins: [
             typescript({
@@ -35,7 +37,8 @@ export default [
         input: './src/index.ts',
         output: {
             file: 'dist/index.module.js',
-            format: 'es'
+            format: 'es',
+            sourcemap: true
         },
         plugins: [
             typescript({

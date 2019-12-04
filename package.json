@@ -5,7 +5,9 @@
   "main": "dist/index.main.js",
   "module": "dist/index.module.js",
   "browser": "dist/index.js",
+  "typings": "dist/index.d.ts",
   "scripts": {
+    "prepare": "npm run build",
     "build": "npx rollup -c",
     "start": "npx rollup -c --watch"
   },
