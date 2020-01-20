@@ -6,3 +6,5 @@ build
 test
 src/**.js
 .idea/*
+lib
+.cache
