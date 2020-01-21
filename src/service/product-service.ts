@@ -1,7 +1,10 @@
 import { ProductResult } from '../model/product-result';
 import { ImageContext } from '../model/image-context';
 import { Product } from '../model/product';
+import { selectorFirstImageOfFormat } from '../utils/selectorFirstImageOfFormat.js';
 
+
+const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_PAGE_SIZE = 20;
 const DEFAULT_PAGE = 0;
 const PRODUCT_FIELDS = 'fields=products(code,name,summary,price(FULL),images(DEFAULT),stock(FULL),averageRating)';
@@ -13,6 +16,7 @@ function sanitise(value: string): string {
 
 export class ProductService {
   private readonly url: string;
+  private readonly imageSelector = selectorFirstImageOfFormat;
 
   constructor(
       private readonly host: string,
@@ -30,7 +34,7 @@ export class ProductService {
   public async search(
       catalogue: string,
       query: string,
-      currency: string,
+      currency: string = DEFAULT_CURRENCY,
       page: number = DEFAULT_PAGE,
       pageSize: number = DEFAULT_PAGE_SIZE,
       defaultImageOptions: ImageOptions = this.defaultImageOptions
@@ -50,7 +54,7 @@ export class ProductService {
   public async getByCode(
       catalogue: string,
       code: string,
-      currency: string,
+      currency: string = DEFAULT_CURRENCY,
       defaultImageOptions: ImageOptions = this.defaultImageOptions
   ): Promise<Product> {
     return fetch(`${ this.host }${ this.basPath }/${ catalogue }/products/${ code }?fields=code,name,summary,price(FULL),images(DEFAULT),stock(FULL),averageRating&lang=en&curr=${ currency }`,
@@ -61,22 +65,14 @@ export class ProductService {
           }
           let product: Product = await response.json();
           product.defaultImageUrl = this.getImageSrc(
-              this.getFirstImageOfFormat(product.images, defaultImageOptions.format, defaultImageOptions.type)
+              this.imageSelector(product.images, defaultImageOptions.format, defaultImageOptions.type)
           );
           return product;
         }
     );
   }
 
-  public getFirstImageOfFormat(
-      images: ImageContext[],
-      imageFormat: string,
-      imageType: string
-  ): ImageContext | undefined {
-    return (images) ? images.find(x => x.format === imageFormat && x.imageType === imageType) : undefined;
-  }
-
-  public getImageSrc(image?: ImageContext): string {
+  private getImageSrc(image?: ImageContext): string {
     return (image) ? `${ this.host }/${ image.url }` : this.defaultNotFoundImage;
   }
 
@@ -91,7 +87,7 @@ export class ProductService {
   private setDefaultImagesForProducts(result: ProductResult, defaultImageOptions: ImageOptions): ProductResult {
     result.products.forEach(x => {
       x.defaultImageUrl = this.getImageSrc(
-          this.getFirstImageOfFormat(x.images, defaultImageOptions.format, defaultImageOptions.type)
+          this.imageSelector(x.images, defaultImageOptions.format, defaultImageOptions.type)
       );
     });
     return result;
