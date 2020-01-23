@@ -13,10 +13,14 @@ export default [
         },
         plugins: [
             typescript({
-                typescript: require('typescript')
-            }),
+                include: '**/*.{ts,js}' ,
+                tsconfigOverride: {
+                    compilerOptions:{
+                        module: "es6"}
+                },
+                typescript: require('typescript')}),
             resolve(),
-            commonjs()
+            commonjs({ include: 'node_modules/**' })
         ]
     },
     {
@@ -27,11 +31,16 @@ export default [
             sourcemap: true
         },
         plugins: [
-            typescript({
-                typescript: require('typescript')
-            }),
+            typescript({ include: '**/*.{ts,js}' ,
+
+                tsconfigOverride: {
+                    compilerOptions:{
+                        module: "es6"}
+                },
+                typescript: require('typescript')}),
             resolve(),
-        ] 
+            commonjs({ include: 'node_modules/**' })
+        ]
     },
     {
         input: './src/index.ts',
@@ -41,10 +50,14 @@ export default [
             sourcemap: true
         },
         plugins: [
-            typescript({
-                typescript: require('typescript')
-            }),
+            typescript({ include: '**/*.{ts,js}' ,
+                tsconfigOverride: {
+                    compilerOptions:{
+                    module: "es6"}
+                },
+                typescript: require('typescript')}),
             resolve(),
-        ] 
+            commonjs({ include: 'node_modules/**' })
+        ]
     }
 ];
