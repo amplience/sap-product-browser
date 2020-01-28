@@ -124,7 +124,7 @@
       "no-reference-import": true,
       "no-regex-spaces": true,
       "no-require-imports": true,
-      "no-reserved-keywords": true,
+      "no-reserved-keywords": false,
       "no-shadowed-variable": true,
       "no-single-line-block-comment": true,
       "no-sparse-arrays": true,
@@ -211,7 +211,7 @@
         }
       ],
       "triple-equals": [true, "allow-null-check"],
-      "typedef": [true, "parameter", "property-declaration", "member-variable-declaration"],
+      "typedef": [true, "parameter", "property-declaration"],
       "typedef-whitespace": [false],
       "typeof-compare": false,
       "underscore-consistent-invocation": true,
@@ -248,4 +248,3 @@
       "use-default-type-parameter": false
     }
   }
-  

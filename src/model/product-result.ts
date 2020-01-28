@@ -2,6 +2,6 @@ import { Pagination } from './pagination';
 import { Product } from './product';
 
 export interface ProductResult {
-  products: Product[]
+  products: Product[];
   pagination: Pagination;
 }

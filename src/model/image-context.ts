@@ -1,5 +1,5 @@
 export interface ImageContext {
-  format: string,
-  imageType: string,
-  url: string
+  format: string;
+  imageType: string;
+  url: string;
 }

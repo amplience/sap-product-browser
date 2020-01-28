@@ -3,7 +3,6 @@ import { ImageContext } from '../model/image-context';
 import { Product } from '../model/product';
 import { selectorFirstImageOfFormat } from '../utils/selectorFirstImageOfFormat.js';
 
-
 const DEFAULT_CURRENCY = 'USD';
 const DEFAULT_PAGE_SIZE = 20;
 const DEFAULT_PAGE = 0;
@@ -11,7 +10,7 @@ const PRODUCT_FIELDS = 'fields=products(code,name,summary,price(FULL),images(DEF
 
 function sanitise(value: string): string {
   const partial = (value.startsWith('/')) ? value.substring(1, value.length) : value;
-  return (partial.endsWith('/')) ? partial.substring(0, partial.length - 1) : partial
+  return (partial.endsWith('/')) ? partial.substring(0, partial.length - 1) : partial;
 }
 
 export class ProductService {
@@ -20,7 +19,7 @@ export class ProductService {
 
   constructor(
       private readonly host: string,
-      private readonly basPath: string,
+      basPath: string,
       private readonly defaultNotFoundImage: string,
       private readonly authTokenSupplier?: () => string,
       private readonly defaultImageOptions: ImageOptions = {
@@ -28,7 +27,7 @@ export class ProductService {
         type: 'PRIMARY'
       }
   ) {
-    this.url = `${ sanitise(host) }/${ sanitise(basPath) }`
+    this.url = `${ sanitise(host) }/${ sanitise(basPath) }`;
   }
 
   public async search(
@@ -57,13 +56,13 @@ export class ProductService {
       currency: string = DEFAULT_CURRENCY,
       defaultImageOptions: ImageOptions = this.defaultImageOptions
   ): Promise<Product> {
-    return fetch(`${ this.host }${ this.basPath }/${ catalogue }/products/${ code }?fields=code,name,summary,price(FULL),images(DEFAULT),stock(FULL),averageRating&lang=en&curr=${ currency }`,
+    return fetch(`${ this.url }/${ catalogue }/products/${ code }?fields=code,name,summary,price(FULL),images(DEFAULT),stock(FULL),averageRating&lang=en&curr=${ currency }`,
         this.buildRequestOptions()
     ).then(async response => {
           if (!response.ok) {
             return Promise.reject(`unable to retrieve product by code from SAP: ${ response.statusText }`);
           }
-          let product: Product = await response.json();
+          const product: Product = await response.json();
           product.defaultImageUrl = this.getImageSrc(
               this.imageSelector(product.images, defaultImageOptions.format, defaultImageOptions.type)
           );
@@ -79,9 +78,9 @@ export class ProductService {
   private buildRequestOptions(): any {
     return (this.authTokenSupplier) ? {
       headers: {
-        'Authorization': this.authTokenSupplier()
+        Authorization: this.authTokenSupplier()
       }
-    } : {}
+    } : {};
   }
 
   private setDefaultImagesForProducts(result: ProductResult, defaultImageOptions: ImageOptions): ProductResult {
@@ -95,6 +94,6 @@ export class ProductService {
 }
 
 interface ImageOptions {
-  format: string
-  type: string
+  format: string;
+  type: string;
 }
