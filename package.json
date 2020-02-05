@@ -1,5 +1,5 @@
 {
-  "name": "sap-product-browser",
+  "name": "@amplience/sap-product-browser",
   "version": "1.0.0",
   "description": "",
   "main": "dist/index.main.js",
