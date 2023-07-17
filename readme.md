@@ -1,5 +1,3 @@
-[![Amplience Dynamic Content](header.png)](https://amplience.com/dynamic-content)
-
 # SAP product browser lib 
 
 [![Build Status](https://travis-ci.org/amplience/sap-product-browser.svg?branch=master)](https://travis-ci.org/amplience/sap-product-browser)
